@@ -39,6 +39,13 @@ async def init_db() -> None:
                 cached_at INTEGER NOT NULL
             )
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS accuweather_location_cache (
+                coord_key TEXT PRIMARY KEY,
+                location_key TEXT NOT NULL,
+                cached_at INTEGER NOT NULL
+            )
+        """)
         await db.commit()
 
 
