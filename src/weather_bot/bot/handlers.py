@@ -4,14 +4,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 
-from weather_bot.aggregator.aggregator import MockAggregator
+from weather_bot.aggregator.aggregator import InsufficientSourcesError, WeatherAggregator
 from weather_bot.bot.formatters import format_current_weather, format_forecast
 from weather_bot.bot.keyboards import share_location_kb, weather_actions_kb
 from weather_bot.storage.db import get_user_location, save_user_location
 from weather_bot.utils.geo import CityNotFoundError, geocode
 
 router = Router()
-_aggregator = MockAggregator()
+_aggregator = WeatherAggregator.from_settings()
 
 
 class SetLocationStates(StatesGroup):
@@ -67,7 +67,11 @@ async def cmd_weather(message: Message) -> None:
             return
 
     city_display = loc.city or city_arg or f"{loc.lat:.2f},{loc.lon:.2f}"
-    agg = await _aggregator.get_weather(loc.lat, loc.lon)
+    try:
+        agg = await _aggregator.get_weather(loc.lat, loc.lon)
+    except InsufficientSourcesError:
+        await message.answer("⚠️ Недостаточно источников данных. Попробуйте позже.")
+        return
     agg.location = loc
     agg.current.location = loc
 
@@ -107,7 +111,11 @@ async def cmd_forecast(message: Message) -> None:
             return
 
     city_display = loc.city or city_arg or f"{loc.lat:.2f},{loc.lon:.2f}"
-    agg = await _aggregator.get_forecast(loc.lat, loc.lon, days)
+    try:
+        agg = await _aggregator.get_forecast(loc.lat, loc.lon, days)
+    except InsufficientSourcesError:
+        await message.answer("⚠️ Недостаточно источников данных. Попробуйте позже.")
+        return
     text = format_forecast(agg.forecast, city_display)
     await message.answer(text, parse_mode="Markdown")
 
