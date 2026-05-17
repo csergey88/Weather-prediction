@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    TELEGRAM_BOT_TOKEN: str
+    TELEGRAM_BOT_TOKEN: str = ""
 
     OWM_API_KEY: str = ""
     WEATHERAPI_KEY: str = ""
